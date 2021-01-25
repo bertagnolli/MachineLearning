@@ -1,3 +1,9 @@
+#Very interesting concept
+# An auto-encoder takes advantage of the fact a neural net takes in fixed set of numers and outputs a fixed set of numbers
+# and encode the data into a smaller dense layer, which then expands out to a larger output which is the same as the input
+# so this smaller mid-layer can be seen as a compression layer! Also if trained with noisy inputs, it can be a good de-noiser
+# There is a denoising-cnn.py example in this folder.
+
 from keras.layers import Input, Dense, Flatten, Reshape
 from keras.models import Model, Sequential
 
@@ -40,6 +46,7 @@ class Images(Callback):
                         for i, data in enumerate(test_data)]},
                   step=epoch)
 
+model.summary()
 model.fit(x_train, x_train,
                 epochs=config.epochs,
                 validation_data=(x_test, x_test),

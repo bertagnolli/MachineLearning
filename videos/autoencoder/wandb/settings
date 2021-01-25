@@ -1,0 +1,5 @@
+[default]
+entity = croto
+project = autoencoder
+base_url = https://api.wandb.ai
+

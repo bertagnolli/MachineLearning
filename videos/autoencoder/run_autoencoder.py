@@ -7,6 +7,9 @@ import cv2
 
 (x_train, _), (x_test, _) = mnist.load_data()
 
+x_train = x_train.astype('float32') / 255.
+x_test = x_test.astype('float32') / 255.
+
 model = load_model('auto.h5')
 
 def add_noise(x_train):
@@ -28,7 +31,7 @@ while(True):
 
   if k == 32:   # space bar
       pass
-      #input_img = add_noise(input_img)
+      input_img = add_noise(input_img)
 
   output_img = model.predict(input_img.reshape(1,28,28))[0].reshape(28,28,1)
   cv2.imshow('input', input_img)

@@ -1,3 +1,8 @@
+# Open Anaconda
+# activate ml-class 
+# navigate to ml-class folder
+# wandb login - add api from wandb.ai website (croto, k4x)
+# cc63bd6814ea995ce93de845da788169427eb8e6
 from keras.datasets import mnist
 from keras.models import Sequential
 from keras.layers import Conv2D, MaxPooling2D, Dropout, Dense, Flatten
@@ -22,6 +27,7 @@ X_test = X_test.astype('float32')
 X_test /= 255.
 
 #reshape input data
+# This is because Keras' 2D convolutions want 3D inputs, because images are 2D + 1D for colour (RGB)
 X_train = X_train.reshape(X_train.shape[0], config.img_width, config.img_height, 1)
 X_test = X_test.reshape(X_test.shape[0], config.img_width, config.img_height, 1)
 
@@ -33,12 +39,27 @@ labels=range(10)
 
 # build model
 model = Sequential()
+# This model does convolution instead of flattening! That's why there's a convolutional layer
+# Notice that giving the input shape is required (28,28,1)
 model.add(Conv2D(32,
     (config.first_layer_conv_width, config.first_layer_conv_height),
     input_shape=(28, 28,1),
     activation='relu'))
+# Max pooling layer shrinks the image down (Max pooling looks for the maximum value within the convolution)
+# There's also the option of an averaging convolution that will average all the values instead of looking 
+# for the maximum value inside the convolution window
 model.add(MaxPooling2D(pool_size=(2, 2)))
+# This layer needs to flatten, since the next layer is a perceptron which requires the input to be flattened
+# To avoid overfitting, or if overfitting is already happening, add a "dropout" layer in between the perceptron layers as below OR after the very first layer
+# One can tell that there's overfitting when accuracy is better than validation accuracy or test accuracy.
+# Validation accuracy should improve, as it is the accuracy of the model with data it hasn't seen yet
+# The 0.4 of the Dropout parameter means 40% of the things coming into the dropout layer will be set to zero
+# A dropout layer will set things to zero, to force the network to reconfigure itself and hopefully come up with better results
+# It can be set from 20% to 50% and it tends to not matter that much which value is chosen
+
+model.add(Dropout(0.4))
 model.add(Flatten())
+model.add(Dropout(0.4))
 model.add(Dense(config.dense_layer_size, activation='relu'))
 model.add(Dense(num_classes, activation='softmax'))
 
@@ -46,7 +67,31 @@ model.compile(loss='categorical_crossentropy', optimizer='adam',
                 metrics=['accuracy'])
 
 model.summary()
+# Model summary will give the summary of the network layers, as below:
+# Layer (type)                 Output Shape              Param #
+# =================================================================
+# conv2d (Conv2D)              (None, 26, 26, 32)        320         # The output of the convolution produces 32 different images
+#																	 # It shrinks a 28x28 image to 26x26 because of the convolution (it loses the end pixels)
+#																	 # The output size of a convolution layer is really large
+# _________________________________________________________________
+# max_pooling2d (MaxPooling2D) (None, 13, 13, 32)        0           # Max pooling reduces the image by half
+# _________________________________________________________________
+# dropout (Dropout)            (None, 13, 13, 32)        0
+# _________________________________________________________________
+# flatten (Flatten)            (None, 5408)              0
+# _________________________________________________________________
+# dropout_1 (Dropout)          (None, 5408)              0
+# _________________________________________________________________
+# dense (Dense)                (None, 100)               540900
+# _________________________________________________________________
+# dense_1 (Dense)              (None, 10)                1010
+# =================================================================
 
+# This CNN produces a 98.9% accuracy, but to improve to 99% it will require another Convolution layer. The reason is
+# because a convolution only acts at one scale, but if we shrink the image down and do a convolution on another scale,
+# we can detect patterns at multiple scales, which is supposed to be much more efficient. 
+# A typical application for an image recognition task will have multiple convolution layers and some sort of shrinking
+# operation in between (such as max pooling)
 model.fit(X_train, y_train, validation_data=(X_test, y_test),
         epochs=config.epochs,
         callbacks=[WandbCallback(data_type="image")])
